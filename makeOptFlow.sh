@@ -37,20 +37,27 @@ j=$[$startFrame + $stepSize]
 mkdir -p "${folderName}"
 
 while true; do
-  file1=$(printf "$filePattern" "$i")
-  file2=$(printf "$filePattern" "$j")
-  if [ -a $file2 ]; then
-    if [ ! -f ${folderName}/forward_${i}_${j}.flo ]; then
-      eval $flowCommandLine "$file1" "$file2" "${folderName}/forward_${i}_${j}.flo"
-    fi
-    if [ ! -f ${folderName}/backward_${j}_${i}.flo ]; then
-      eval $flowCommandLine "$file2" "$file1" "${folderName}/backward_${j}_${i}.flo"
-    fi
-    ./consistencyChecker/consistencyChecker "${folderName}/backward_${j}_${i}.flo" "${folderName}/forward_${i}_${j}.flo" "${folderName}/reliable_${j}_${i}.pgm"
-    ./consistencyChecker/consistencyChecker "${folderName}/forward_${i}_${j}.flo" "${folderName}/backward_${j}_${i}.flo" "${folderName}/reliable_${i}_${j}.pgm"
-  else
-    break
-  fi
-  i=$[$i +1]
-  j=$[$j +1]
+    
+  for u in {0..4..1}; do
+      file1=$(printf "$filePattern" "$i")
+      file2=$(printf "$filePattern" "$j")
+      if [ -a $file2 ]; then
+        echo "Process frame $i"
+        if [ ! -f ${folderName}/forward_${i}_${j}.flo ]; then
+          eval $flowCommandLine "$file1" "$file2" "${folderName}/forward_${i}_${j}.flo" &&
+          eval $flowCommandLine "$file2" "$file1" "${folderName}/backward_${j}_${i}.flo" &&
+          ./consistencyChecker/consistencyChecker "${folderName}/backward_${j}_${i}.flo" "${folderName}/forward_${i}_${j}.flo" "${folderName}/reliable_${j}_${i}.pgm" &&
+          ./consistencyChecker/consistencyChecker "${folderName}/forward_${i}_${j}.flo" "${folderName}/backward_${j}_${i}.flo" "${folderName}/reliable_${i}_${j}.pgm" &
+          
+        fi
+        
+        #./consistencyChecker/consistencyChecker "${folderName}/backward_${j}_${i}.flo" "${folderName}/forward_${i}_${j}.flo" "${folderName}/reliable_${j}_${i}.pgm" &
+        #./consistencyChecker/consistencyChecker "${folderName}/forward_${i}_${j}.flo" "${folderName}/backward_${j}_${i}.flo" "${folderName}/reliable_${i}_${j}.pgm" &
+        #wait
+      fi 
+      i=$[$i +1]
+      j=$[$j +1]
+  done
+  wait 
+  
 done
